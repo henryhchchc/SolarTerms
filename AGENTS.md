@@ -11,7 +11,7 @@
 - Follow RFC 5545, including text escaping, CRLF, and 75-byte folding without splitting Unicode characters.
 - Publish only the ICS file.
   Keep generated files out of Git and preserve the previous deployment when generation fails.
-- Pin GitHub Actions to release commit SHAs and grant only necessary permissions.
+- Pin GitHub Actions to exact semantic version tags and grant only necessary permissions.
 - Keep README.md user-facing and this file limited to durable development guidance.
 
 ## Verification
