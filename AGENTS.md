@@ -20,6 +20,24 @@
   Event detail links point to `https://www.hko.gov.hk/en/gts/astronomy/Solar_Term.htm`.
 - Follow RFC 5545: UTF-8, CRLF, escaped text, UTC timestamps, date-only start/end, transparent availability, and 75-byte folding without splitting Unicode characters.
 
+## Deployment
+
+- `.github/workflows/pages.yml` generates the rolling three-year calendar with uv and Python 3.14 on Ubuntu, then uploads and deploys it through GitHub Pages.
+- Publish only `_site/solar_terms.ics`; the public URL is `https://henryhchchc.github.io/SolarTerms/solar_terms.ics`.
+  Generated files remain artifacts, outside Git.
+- Trigger on pushes to `main`, manual dispatch, and January 1 and July 1 at 08:17 Hong Kong time (`17 0 1 1,7 *` UTC).
+- Retry generation up to three times, waiting 15 seconds between attempts.
+  Failed generation must prevent deployment and preserve the previous published calendar.
+- Pin actions to release commit SHAs, serialize publishing runs, and grant Pages/OIDC write permissions only to deployment.
+- The repository is `henryhchchc/SolarTerms`; use `git@github.com:henryhchchc/SolarTerms.git` as `origin` and `main` as the default branch.
+  GitHub Pages must use GitHub Actions as its publishing source (`build_type: workflow`).
+- Public-repository schedules can be disabled after 60 days without repository activity; workflow runs do not prevent this.
+  Re-enable the workflow manually in Actions → Publish calendar → Enable workflow, or run `gh workflow enable pages.yml --repo henryhchchc/SolarTerms`.
+  Then use Run workflow or `gh workflow run pages.yml --repo henryhchchc/SolarTerms --ref main` to publish immediately.
+- Validate workflow changes with `actionlint`.
+  After deployment, fetch the direct ICS URL and compare it with the uploaded file; inspect it with an independent calendar parser.
+  Confirm manual dispatch republishes at the same URL.
+
 ## Verification
 
 Format Markdown with `rumdl fmt README.md AGENTS.md`.
@@ -45,5 +63,8 @@ Manual verification on 2026-10-08 with Python 3.14 confirmed:
 - Iterator output matches the preceding implementation except for generation timestamps.
   Failure after 24 streamed events preserves output and removes the temporary file.
 - Ruff formatting and lint checks pass.
+- The Pages build step produces only `solar_terms.ics`, with 72 independently parsed events for 2026–2028.
+  Forced network failure exhausts three attempts, exits unsuccessfully, preserves existing output, and removes temporary files.
+  `actionlint` and rumdl checks pass.
 
 Keep README.md focused on usage and calendar behavior; put implementation and verification notes here.

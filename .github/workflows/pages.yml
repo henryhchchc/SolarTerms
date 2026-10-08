@@ -1,0 +1,60 @@
+name: Publish calendar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # January 1 and July 1, 08:17 Hong Kong time.
+    - cron: '17 0 1 1,7 *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: '3.14'
+      - name: Generate calendar
+        run: |
+          mkdir -p _site
+          for attempt in 1 2 3; do
+            if uv run --python 3.14 solar_terms.py -o _site/solar_terms.ics; then
+              exit 0
+            fi
+            echo "Generation failed (attempt $attempt/3)." >&2
+            if (( attempt < 3 )); then
+              sleep 15
+            fi
+          done
+          exit 1
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}solar_terms.ics
+    steps:
+      - name: Deploy calendar
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

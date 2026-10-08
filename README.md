@@ -1,7 +1,11 @@
 # Solar Terms
 
 Create an iCalendar file of the 24 solar terms using [Hong Kong Observatory data](https://www.hko.gov.hk/en/gts/astronomy/Solar_Term.htm).
-Requires Python 3.14+.
+Subscribe to [solar_terms.ics](https://henryhchchc.github.io/SolarTerms/solar_terms.ics) using your calendar application's option to add a calendar by URL.
+The calendar is refreshed on January 1, July 1, and project updates.
+You can also download and import it for a snapshot.
+
+To generate a calendar locally, use Python 3.14+:
 
 ```sh
 uv run solar_terms.py
