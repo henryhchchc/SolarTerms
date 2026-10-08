@@ -1,0 +1,17 @@
+[project]
+name = "solar-terms"
+version = "0.1.0"
+description = "Generate bilingual solar-term calendars from Hong Kong Observatory data"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+solar-terms = "solar_terms.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13"]
+build-backend = "uv_build"
+
+[tool.ruff]
+target-version = "py314"

@@ -26,11 +26,13 @@ jobs:
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.14'
+      - name: Install project
+        run: uv sync --locked --no-dev
       - name: Generate calendar
         run: |
           mkdir -p _site
           for attempt in 1 2 3; do
-            if uv run --python 3.14 solar_terms.py -o _site/solar_terms.ics; then
+            if uv run --locked --no-sync solar-terms -o _site/solar_terms.ics; then
               exit 0
             fi
             echo "Generation failed (attempt $attempt/3)." >&2

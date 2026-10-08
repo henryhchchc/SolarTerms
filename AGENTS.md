@@ -2,7 +2,8 @@
 
 ## Development
 
-- Use Python 3.14+ and the standard library; retain inline script metadata for uv.
+- Use Python 3.14+ and the standard library; maintain project metadata and uv.lock.
+- Keep fixed names and background in `src/solar_terms/knowledge.py`, separate from CLI and calendar generation.
 - Prefer iterators.
   Preserve atomic output replacement and cleanup on failure.
 - Preserve stable event identifiers, Hong Kong dates, and exact times (UTC+08:00).
@@ -22,8 +23,8 @@ Check stable identifiers, date/time handling, serialization, and preservation of
 Use the formatters and checks:
 
 ```sh
-ruff format --target-version py314 solar_terms.py
-ruff check --target-version py314 solar_terms.py
+ruff format src
+ruff check src
 rumdl fmt README.md AGENTS.md
 actionlint .github/workflows/pages.yml
 ```
