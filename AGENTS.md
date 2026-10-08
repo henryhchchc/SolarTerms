@@ -1,70 +1,29 @@
 # Solar Terms
 
-## Implementation
+## Development
 
 - Use Python 3.14+ and the standard library; retain inline script metadata for uv.
-- Fetch `https://www.hko.gov.hk/en/gts/astronomy/data/files/24SolarTerms_<year>.xml` with a 30-second timeout.
-  XML contains dates and times, without names.
-- Validate the root year, 24 records, required fields, valid dates/times, strict chronological order, and two records per month.
-- Hard-code names and background from HKO's [Traditional Chinese](https://www.hko.gov.hk/tc/gts/time/24solarterms.htm) and [English](https://www.hko.gov.hk/en/gts/time/24solarterms.htm) tables.
-  January starts with 小寒; solar longitude starts at 285° and advances by 15°.
-  Multiples of 30° are 中氣; other terms are 節氣.
-- Preserve Hong Kong dates and exact times (UTC+08:00).
-  All-day events end exclusively on the following date.
-  Include bilingual classification, longitude, and daylight notes for equinoxes and solstices.
-- Sort and deduplicate requested years before streaming terms.
-  Keep fetching, rendering, and folding as iterators; avoid materializing the calendar.
-- Consume the stream into a temporary file beside the destination.
-  Replace output only after successful completion and close; clean up on failure, including errors raised during iteration.
-- Preserve UUID5 identifiers derived from the yearly XML URL and term index.
-  Event detail links point to `https://www.hko.gov.hk/en/gts/astronomy/Solar_Term.htm`.
-- Follow RFC 5545: UTF-8, CRLF, escaped text, UTC timestamps, date-only start/end, transparent availability, and 75-byte folding without splitting Unicode characters.
-
-## Deployment
-
-- `.github/workflows/pages.yml` generates the rolling three-year calendar with uv and Python 3.14 on Ubuntu, then uploads and deploys it through GitHub Pages.
-- Publish only `_site/solar_terms.ics`; the public URL is `https://henryhchchc.github.io/SolarTerms/solar_terms.ics`.
-  Generated files remain artifacts, outside Git.
-- Trigger on pushes to `main`, manual dispatch, and January 1 and July 1 at 08:17 Hong Kong time (`17 0 1 1,7 *` UTC).
-- Retry generation up to three times, waiting 15 seconds between attempts.
-  Failed generation must prevent deployment and preserve the previous published calendar.
-- Pin actions to release commit SHAs, serialize publishing runs, and grant Pages/OIDC write permissions only to deployment.
-- The repository is `henryhchchc/SolarTerms`; use `git@github.com:henryhchchc/SolarTerms.git` as `origin` and `main` as the default branch.
-  GitHub Pages must use GitHub Actions as its publishing source (`build_type: workflow`).
-- Public-repository schedules can be disabled after 60 days without repository activity; workflow runs do not prevent this.
-  Re-enable the workflow manually in Actions → Publish calendar → Enable workflow, or run `gh workflow enable pages.yml --repo henryhchchc/SolarTerms`.
-  Then use Run workflow or `gh workflow run pages.yml --repo henryhchchc/SolarTerms --ref main` to publish immediately.
-- Validate workflow changes with `actionlint`.
-  After deployment, fetch the direct ICS URL and compare it with the uploaded file; inspect it with an independent calendar parser.
-  Confirm manual dispatch republishes at the same URL.
+- Prefer iterators.
+  Preserve atomic output replacement and cleanup on failure.
+- Preserve stable event identifiers, Hong Kong dates, and exact times (UTC+08:00).
+- Hard-code bilingual names and background from HKO's [Traditional Chinese](https://www.hko.gov.hk/tc/gts/time/24solarterms.htm) and [English](https://www.hko.gov.hk/en/gts/time/24solarterms.htm) explanations.
+- Follow RFC 5545, including text escaping, CRLF, and 75-byte folding without splitting Unicode characters.
+- Publish only the ICS file.
+  Keep generated files out of Git and preserve the previous deployment when generation fails.
+- Pin GitHub Actions to release commit SHAs and grant only necessary permissions.
+- Keep README.md user-facing and this file limited to durable development guidance.
 
 ## Verification
 
-Format Markdown with `rumdl fmt README.md AGENTS.md`.
-
 Do not add automated tests.
-Verify changes manually and run the formatter:
+Verify affected behavior manually against HKO and inspect generated calendars with an independent parser.
+Check stable identifiers, date/time handling, serialization, and preservation of existing output on failure as relevant.
+
+Use the formatters and checks:
 
 ```sh
 ruff format --target-version py314 solar_terms.py
 ruff check --target-version py314 solar_terms.py
+rumdl fmt README.md AGENTS.md
+actionlint .github/workflows/pages.yml
 ```
-
-Compare generated names, dates, times, classifications, and longitudes against HKO.
-Inspect the calendar with an independent parser; verification tools may use temporary dependencies without adding runtime dependencies.
-Check relevant CLI options and failure paths, stable identifiers, Unicode serialization, and preservation of existing output.
-
-Manual verification on 2026-10-08 with Python 3.14 confirmed:
-
-- All 72 events for 2026–2028 match independently downloaded HKO XML and both name tables; bilingual background matches HKO's explanations.
-- Independent parsing, date-only boundaries, stable unique identifiers, UTC timestamps, escaping, CRLF, and 75-byte folding pass.
-- Default years, sorted/deduplicated explicit years, and custom output work.
-- Invalid arguments, unavailable years, malformed XML, connection failures, and output permission/path errors preserve existing output.
-- Iterator output matches the preceding implementation except for generation timestamps.
-  Failure after 24 streamed events preserves output and removes the temporary file.
-- Ruff formatting and lint checks pass.
-- The Pages build step produces only `solar_terms.ics`, with 72 independently parsed events for 2026–2028.
-  Forced network failure exhausts three attempts, exits unsuccessfully, preserves existing output, and removes temporary files.
-  `actionlint` and rumdl checks pass.
-
-Keep README.md focused on usage and calendar behavior; put implementation and verification notes here.
