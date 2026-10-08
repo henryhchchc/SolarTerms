@@ -6,7 +6,7 @@ The 24 solar terms mark the seasons through the Sun's apparent movement across t
 Each term begins when the Sun advances another 15° along its annual path, the ecliptic.
 The cycle includes the equinoxes, solstices, and the traditional beginnings of spring, summer, autumn, and winter.
 
-Names such as *Corn Rain*, *White Dew*, and *Insects Waken* reflect seasonal weather and farming activities in ancient central China.
+Names such as *穀雨 Corn Rain*, *白露 White Dew*, and *驚蟄 Insects Waken* reflect seasonal weather and farming activities in ancient central China.
 The terms also help align the traditional Chinese calendar with the solar year: its 12 major terms alternate with 12 minor terms, and a lunar month without a major term becomes a leap month.
 
 [Read more at Hong Kong Observatory](https://www.hko.gov.hk/en/gts/time/24solarterms.htm).
