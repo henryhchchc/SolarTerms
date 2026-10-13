@@ -1,5 +1,7 @@
 # 🌿 Solar Terms · 二十四節氣
 
+![Solar Terms](docs/project.png)
+
 A bilingual calendar of the 24 solar terms, based on [Hong Kong Observatory data](https://www.hko.gov.hk/en/gts/astronomy/Solar_Term.htm).
 
 The 24 solar terms mark the seasons through the Sun's apparent movement across the sky.
