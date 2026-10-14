@@ -1,6 +1,6 @@
 # 🌿 Solar Terms · 二十四節氣
 
-![Solar Terms](docs/project.png)
+![Solar Terms](docs/assets/project.png)
 
 A bilingual calendar of the 24 solar terms, based on [Hong Kong Observatory data](https://www.hko.gov.hk/en/gts/astronomy/Solar_Term.htm).
 
