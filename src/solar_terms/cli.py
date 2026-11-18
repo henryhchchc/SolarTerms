@@ -22,8 +22,6 @@ SOURCE = (
     "https://www.hko.gov.hk/en/gts/astronomy/data/files/24SolarTerms_{year:04d}.xml"
 )
 
-CALENDAR_SOURCE = "https://henryhchchc.github.io/SolarTerms/solar_terms.ics"
-
 
 @dataclass(frozen=True)
 class SolarTerm:
@@ -77,14 +75,15 @@ def fetch_terms(year: int) -> Iterator[SolarTerm]:
         yield SolarTerm(index, instant, source)
 
 
-def render_calendar(terms: Iterable[SolarTerm]) -> bytes:
+def render_calendar(terms: Iterable[SolarTerm], *, source: str | None = None) -> bytes:
     stamp = datetime.now(UTC)
     calendar = Calendar(
         version="2.0",
         name="二十四節氣 24 Solar Terms",
         prodid="-//SolarTerms//HKO Solar Terms//EN",
-        source=CALENDAR_SOURCE,
     )
+    if source:
+        calendar.source = source
     for term in terms:
         chinese, english = NAMES[term.index]
         start = term.instant.date()
@@ -124,15 +123,31 @@ def write_calendar(path: Path, contents: bytes) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Convert HKO solar terms to an all-day calendar."
+        description=(
+            "Generate a bilingual iCalendar (.ics) file with all-day solar term "
+            "events from the Hong Kong Observatory. Covers the current "
+            "year and the following two years."
+        ),
     )
-    parser.add_argument("-o", "--output", type=Path, default=Path("solar_terms.ics"))
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        metavar="FILE",
+        default=Path("solar_terms.ics"),
+        help="write to FILE (default: %(default)s). Its directory must already exist.",
+    )
+    parser.add_argument(
+        "--source",
+        metavar="URL",
+        help="set the calendar update URL. Omit to leave the update source unset.",
+    )
     args = parser.parse_args()
     current_year = datetime.now(HONG_KONG).year
     years = range(current_year, current_year + 3)
     try:
         terms = (term for year in years for term in fetch_terms(year))
-        write_calendar(args.output, render_calendar(terms))
+        write_calendar(args.output, render_calendar(terms, source=args.source))
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

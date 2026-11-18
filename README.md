@@ -21,7 +21,7 @@ Copy this URL into your calendar app's **Add calendar by URL** or **Subscribe** 
 https://henryhchchc.github.io/SolarTerms/solar_terms.ics
 ```
 
-The calendar covers the current Hong Kong year and the following two years.
+The calendar covers the current year and the following two years.
 The feed refreshes on January 1, July 1, and when the project changes.
 
 ## ☀️ What's inside
@@ -31,3 +31,13 @@ The feed refreshes on January 1, July 1, and when the project changes.
 - **Astronomical background:** Bilingual classifications, solar longitudes, and daylight notes for equinoxes and solstices.
 
 Events leave your day available and include no alarms.
+
+## 🛠️ Generate your own
+
+With uv and Python 3.14+, run from the project directory.
+
+```sh
+uv run solar-terms
+```
+
+For usage and options, run `uv run solar-terms --help`.
