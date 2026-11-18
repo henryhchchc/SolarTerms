@@ -13,12 +13,16 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 
+from icalendar import TRANSP, Calendar, Event
+
 from .knowledge import DETAIL_URL, NAMES, describe_term
 
 HONG_KONG = timezone(timedelta(hours=8), "Hong Kong Time")
 SOURCE = (
     "https://www.hko.gov.hk/en/gts/astronomy/data/files/24SolarTerms_{year:04d}.xml"
 )
+
+CALENDAR_SOURCE = "https://henryhchchc.github.io/SolarTerms/solar_terms.ics"
 
 
 @dataclass(frozen=True)
@@ -73,40 +77,13 @@ def fetch_terms(year: int) -> Iterator[SolarTerm]:
         yield SolarTerm(index, instant, source)
 
 
-def escape_text(value: str) -> str:
-    return (
-        value.replace("\\", "\\\\")
-        .replace("\r\n", "\n")
-        .replace("\r", "\n")
-        .replace("\n", "\\n")
-        .replace(";", "\\;")
-        .replace(",", "\\,")
-    )
-
-
-def fold_line(value: str) -> Iterator[str]:
-    # Count UTF-8 bytes, including the leading space on continuation lines.
-    current = ""
-    size = 0
-    for character in value:
-        width = len(character.encode("utf-8"))
-        if size + width > 75:
-            yield current
-            current = " "
-            size = 1
-        current += character
-        size += width
-    yield current
-
-
-def render_calendar(terms: Iterable[SolarTerm]) -> Iterator[str]:
-    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    yield from (
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        "PRODID:-//SolarTerms//HKO Solar Terms//EN",
-        "CALSCALE:GREGORIAN",
-        "X-WR-CALNAME:二十四節氣 24 Solar Terms",
+def render_calendar(terms: Iterable[SolarTerm]) -> bytes:
+    stamp = datetime.now(UTC)
+    calendar = Calendar(
+        version="2.0",
+        name="二十四節氣 24 Solar Terms",
+        prodid="-//SolarTerms//HKO Solar Terms//EN",
+        source=CALENDAR_SOURCE,
     )
     for term in terms:
         chinese, english = NAMES[term.index]
@@ -117,63 +94,42 @@ def render_calendar(terms: Iterable[SolarTerm]) -> Iterator[str]:
             f"{term.instant:%Y-%m-%d %H:%M} Hong Kong Time (UTC+08:00)\n\n"
             f"{describe_term(term.index)}"
         )
-        yield from (
-            "BEGIN:VEVENT",
-            f"UID:{uid}",
-            f"DTSTAMP:{stamp}",
-            f"DTSTART;VALUE=DATE:{start:%Y%m%d}",
-            f"DTEND;VALUE=DATE:{end:%Y%m%d}",
-            f"SUMMARY:{escape_text(f'{chinese} {english}')}",
-            f"DESCRIPTION:{escape_text(description)}",
-            f"URL:{DETAIL_URL}",
-            "TRANSP:TRANSPARENT",
-            "END:VEVENT",
+        event = Event.new(
+            uid=uid,
+            stamp=stamp,
+            start=start,
+            end=end,
+            summary=f"{chinese} {english}",
+            description=description,
+            url=DETAIL_URL,
+            transparency=TRANSP.TRANSPARENT,
         )
-    yield "END:VCALENDAR"
+        calendar.add_component(event)
+    return calendar.to_ical()
 
 
-def write_calendar(path: Path, lines: Iterable[str]) -> None:
+def write_calendar(path: Path, contents: bytes) -> None:
     temporary: Path | None = None
     try:
         with tempfile.NamedTemporaryFile(
             dir=path.parent, prefix=f".{path.name}.", delete=False
         ) as file:
             temporary = Path(file.name)
-            file.writelines(
-                (folded + "\r\n").encode("utf-8")
-                for line in lines
-                for folded in fold_line(line)
-            )
+            file.write(contents)
         os.replace(temporary, path)
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
 
 
-def parse_year(value: str) -> int:
-    try:
-        year = int(value)
-    except ValueError as exc:
-        raise argparse.ArgumentTypeError("year must be an integer") from exc
-    if not 1 <= year <= 9998:
-        raise argparse.ArgumentTypeError("year must be between 1 and 9998")
-    return year
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Convert HKO solar terms to an all-day calendar."
     )
-    parser.add_argument(
-        "years",
-        nargs="*",
-        type=parse_year,
-        help="default: current Hong Kong year and next two",
-    )
     parser.add_argument("-o", "--output", type=Path, default=Path("solar_terms.ics"))
     args = parser.parse_args()
     current_year = datetime.now(HONG_KONG).year
-    years = sorted(set(args.years or range(current_year, current_year + 3)))
+    years = range(current_year, current_year + 3)
     try:
         terms = (term for year in years for term in fetch_terms(year))
         write_calendar(args.output, render_calendar(terms))

@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Generate bilingual solar-term calendars from Hong Kong Observatory data"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "icalendar>=7.3.0",
+]
 
 [project.scripts]
 solar-terms = "solar_terms.cli:main"

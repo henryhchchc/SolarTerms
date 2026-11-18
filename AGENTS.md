@@ -2,7 +2,8 @@
 
 ## Development
 
-- Use Python 3.14+ and the standard library; maintain project metadata and uv.lock.
+- Use Python 3.14+, the standard library, and `icalendar` for ICS generation.
+  Maintain project metadata and uv.lock.
 - Keep fixed names and background in `src/solar_terms/knowledge.py`, separate from CLI and calendar generation.
 - Prefer iterators.
   Preserve atomic output replacement and cleanup on failure.
