@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import re
 import sys
@@ -12,15 +13,32 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
+from typing import ClassVar
 
 from icalendar import TRANSP, Calendar, Event
 
 from .knowledge import DETAIL_URL, NAMES, describe_term
 
+LOGGER = logging.getLogger(__name__)
 HONG_KONG = timezone(timedelta(hours=8), "Hong Kong Time")
 SOURCE = (
     "https://www.hko.gov.hk/en/gts/astronomy/data/files/24SolarTerms_{year:04d}.xml"
 )
+
+
+class ColorLogFormatter(logging.Formatter):
+    COLORS: ClassVar[dict[int, str]] = {
+        logging.INFO: "\x1b[36m",
+        logging.WARNING: "\x1b[33m",
+        logging.ERROR: "\x1b[31m",
+        logging.CRITICAL: "\x1b[31m",
+    }
+
+    def formatMessage(self, record: logging.LogRecord) -> str:
+        color = self.COLORS.get(record.levelno)
+        if color is None:
+            return super().formatMessage(record)
+        return f"{color}{record.levelname}\x1b[0m: {record.message}"
 
 
 @dataclass(frozen=True)
@@ -32,6 +50,7 @@ class SolarTerm:
 
 def fetch_terms(year: int) -> Iterator[SolarTerm]:
     source = SOURCE.format(year=year)
+    LOGGER.info("Fetching solar terms for %d from the Hong Kong Observatory", year)
     try:
         with urllib.request.urlopen(source, timeout=30) as response:
             root = ET.fromstring(response.read())
@@ -143,13 +162,21 @@ def main() -> int:
         help="set the calendar update URL. Omit to leave the update source unset.",
     )
     args = parser.parse_args()
+    handler = logging.StreamHandler()
+    formatter = (
+        ColorLogFormatter
+        if sys.stderr.isatty() and not os.environ.get("NO_COLOR")
+        else logging.Formatter
+    )
+    handler.setFormatter(formatter("%(levelname)s: %(message)s"))
+    logging.basicConfig(level=logging.INFO, handlers=[handler])
     current_year = datetime.now(HONG_KONG).year
     years = range(current_year, current_year + 3)
     try:
         terms = (term for year in years for term in fetch_terms(year))
         write_calendar(args.output, render_calendar(terms, source=args.source))
     except (OSError, ValueError) as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        LOGGER.error("%s", exc)
         return 1
-    print(f"Wrote {24 * len(years)} events to {args.output}")
+    LOGGER.info("Wrote %d events to %s", 24 * len(years), args.output)
     return 0
